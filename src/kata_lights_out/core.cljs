@@ -8,8 +8,6 @@
 ;; -------------------------
 ;; Views
 
-(declare init!)
-
 (def m 3)
 (def n 3)
 
@@ -45,7 +43,6 @@
 
 ;; -------------------------
 ;; Initialize app
-
 (defn mount-root []
   (r/render
     [home-page]
