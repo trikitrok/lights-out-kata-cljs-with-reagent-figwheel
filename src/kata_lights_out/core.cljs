@@ -7,7 +7,6 @@
 
 ;; -------------------------
 ;; Views
-
 (def m 3)
 (def n 3)
 
@@ -16,11 +15,13 @@
 
 (def lights (r/atom []))
 
-(defn message-component [lights]
-  [:div#all-offmsg
-   (if (l/all-lights-off? lights)
-     "Lights out, Yay!"
-     {:style {:display :none}})])
+(defn all-lights-off-message-content [lights]
+  (if (l/all-lights-off? lights)
+    "Lights out, Yay!"
+    {:style {:display :none}}))
+
+(defn all-lights-off-message-component [lights]
+  [:div#all-off-msg (all-lights-off-message-content lights)])
 
 (defn on-light-click [pos lights]
   (swap! lights (partial l/flip-neighbors m n pos)))
@@ -39,7 +40,7 @@
 (defn home-page []
   [:div [:h2 "Kata Lights Out"]
    (map-indexed row-lights-component @lights)
-   [message-component @lights]])
+   [all-lights-off-message-component @lights]])
 
 ;; -------------------------
 ;; Initialize app
