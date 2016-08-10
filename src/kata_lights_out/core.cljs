@@ -10,10 +10,8 @@
 ;; Initialize app
 (def m 3)
 (def n 3)
-(def lights (r/atom []))
 
 (defn init! []
-  (reset! lights (l/all-lights-on m n))
-  (light-view/mount m n lights))
+  (light-view/mount m n))
 
 (init!)

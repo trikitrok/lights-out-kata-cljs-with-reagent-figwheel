@@ -1,38 +1,39 @@
-(ns kata-lights-out.lights)
+(ns kata-lights-out.lights
+  (:require
+    [cljs-http.client :as http]
+    [cljs.core.async :as async])
+  (:require-macros
+    [cljs.core.async.macros :refer [go]]))
 
-(def ^:private light-on 1)
 (def ^:private light-off 0)
-
-(defn all-lights-on [m n]
-  (mapv #(vec (repeat n light-on))
-        (range m)))
-
-(defn- neighbors? [[i0 j0] [i j]]
-  (or (and (= j0 j) (= 1 (Math/abs (- i0 i))))
-      (and (= i0 i) (= 1 (Math/abs (- j0 j))))))
-
-(defn- neighbors [m n pos]
-  (for [i (range m)
-        j (range n)
-        :when (neighbors? pos [i j])]
-    [i j]))
 
 (defn light-off? [light]
   (= light light-off))
 
-(defn- flip-light [light]
-  (if (light-off? light)
-    light-on
-    light-off))
+(defn- extract-lights [response]
+  (->> response
+       :body
+       (.parse js/JSON)
+       .-lights
+       js->clj))
 
-(defn- flip [lights pos]
-  (update-in lights pos flip-light))
+(defn flip-light [[x y]]
+  (go
+    (let [response (async/<! (http/post "http://localhost:3000/flip-light"
+                                        {:with-credentials? false
+                                         :form-params {:x x :y y}}))]
+      )))
 
-(defn flip-neighbors [m n pos lights]
-  (->> pos
-       (neighbors m n)
-       (cons pos)
-       (reduce flip lights)))
+(defn reset-lights! [result-channel m n]
+  (go
+    (let [response (async/<! (http/post "http://localhost:3000/reset-lights"
+                                        {:channel (async/chan 1)
+                                         :with-credentials? false
+                                         :form-params {:m m :n n}}))]
+      ;(async/>! result-channel (:body response))
+
+      (println (extract-lights response))
+      )))
 
 (defn all-lights-off? [lights]
- (every? zero? (flatten lights)))
+  (every? zero? (flatten lights)))
