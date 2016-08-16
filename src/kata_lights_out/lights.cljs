@@ -3,10 +3,6 @@
 (def ^:private light-on 1)
 (def ^:private light-off 0)
 
-(defn all-lights-on [m n]
-  (mapv #(vec (repeat n light-on))
-        (range m)))
-
 (defn- neighbors? [[i0 j0] [i j]]
   (or (and (= j0 j) (= 1 (Math/abs (- i0 i))))
       (and (= i0 i) (= 1 (Math/abs (- j0 j))))))
@@ -28,11 +24,26 @@
 (defn- flip [lights pos]
   (update-in lights pos flip-light))
 
-(defn flip-neighbors [m n pos lights]
+(defn- num-rows [lights]
+  (count lights))
+
+(defn- num-colums [lights]
+  (count (first lights)))
+
+(defn- flip-neighbors [pos lights]
   (->> pos
-       (neighbors m n)
+       (neighbors (num-rows lights) (num-colums lights))
        (cons pos)
        (reduce flip lights)))
 
+(defn- all-lights-on [m n]
+  (vec (repeat m (vec (repeat n light-on)))))
+
+(defn reset-lights! [lights m n]
+  (reset! lights (all-lights-on m n)))
+
+(defn flip-lights! [lights pos]
+  (swap! lights (partial flip-neighbors pos)))
+
 (defn all-lights-off? [lights]
- (every? zero? (flatten lights)))
+  (every? zero? (flatten lights)))

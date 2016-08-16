@@ -13,7 +13,7 @@
 (def lights (r/atom []))
 
 (defn init! []
-  (reset! lights (l/all-lights-on m n))
-  (light-view/mount m n lights))
+  (l/reset-lights! lights m n)
+  (light-view/mount lights))
 
 (init!)
