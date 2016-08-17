@@ -1,9 +1,12 @@
 (ns kata-lights-out.lights
   (:require
+    [reagent.core :as r]
     [cljs-http.client :as http]
     [cljs.core.async :as async])
   (:require-macros
-    [cljs.core.async.macros :refer [go]]))
+    [cljs.core.async.macros :refer [go go-loop]]))
+
+(def ^:private lights (r/atom []))
 
 (def ^:private light-off 0)
 
@@ -11,29 +14,34 @@
   (= light light-off))
 
 (defn- extract-lights [response]
+  (println response)
   (->> response
        :body
        (.parse js/JSON)
        .-lights
        js->clj))
 
-(defn flip-light [[x y]]
-  (go
-    (let [response (async/<! (http/post "http://localhost:3000/flip-light"
-                                        {:with-credentials? false
-                                         :form-params {:x x :y y}}))]
-      )))
+(defn listen-lights-updates! [lights-channel]
+  (go-loop []
+    (when-let [response (async/<! lights-channel)]
+      (reset! lights (extract-lights response))
+      (recur))))
+
+(defn flip-light! [result-channel [x y]]
+  (async/pipe
+    (http/post "http://localhost:3000/flip-light"
+               {:with-credentials? false
+                :form-params {:x x :y y}})
+    result-channel
+    false))
 
 (defn reset-lights! [result-channel m n]
-  (go
-    (let [response (async/<! (http/post "http://localhost:3000/reset-lights"
-                                        {:channel (async/chan 1)
-                                         :with-credentials? false
-                                         :form-params {:m m :n n}}))]
-      ;(async/>! result-channel (:body response))
-
-      (println (extract-lights response))
-      )))
+  (async/pipe
+    (http/post "http://localhost:3000/reset-lights"
+               {:with-credentials? false
+                :form-params {:m m :n n}})
+    result-channel
+    false))
 
 (defn all-lights-off? [lights]
   (every? zero? (flatten lights)))
