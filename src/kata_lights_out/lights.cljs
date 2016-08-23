@@ -14,7 +14,6 @@
   (= light light-off))
 
 (defn- extract-lights [response]
-  (println response)
   (->> response
        :body
        (.parse js/JSON)
