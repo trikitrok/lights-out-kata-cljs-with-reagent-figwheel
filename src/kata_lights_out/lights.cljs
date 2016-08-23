@@ -43,4 +43,4 @@
     false))
 
 (defn all-lights-off? [lights]
-  (every? zero? (flatten lights)))
+  (every? light-off? (flatten lights)))
