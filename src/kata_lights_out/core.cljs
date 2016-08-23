@@ -1,7 +1,5 @@
 (ns kata-lights-out.core
   (:require
-    [reagent.core :as r]
-    [kata-lights-out.lights :as l]
     [kata-lights-out.lights-view :as light-view]
     [cljs.core.async :as async]))
 
@@ -9,8 +7,8 @@
 
 ;; -------------------------
 ;; Initialize app
-(def m 4)
-(def n 4)
+(def m 3)
+(def n 3)
 (def lights-channel (async/chan))
 
 (defn init! []
