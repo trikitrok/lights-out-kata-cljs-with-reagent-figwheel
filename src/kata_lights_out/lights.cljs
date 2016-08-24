@@ -26,20 +26,20 @@
       (reset! lights (extract-lights response))
       (recur))))
 
-(defn flip-light! [result-channel [x y]]
+(defn flip-light! [lights-channel [x y]]
   (async/pipe
     (http/post "http://localhost:3000/flip-light"
                {:with-credentials? false
                 :form-params {:x x :y y}})
-    result-channel
+    lights-channel
     false))
 
-(defn reset-lights! [result-channel m n]
+(defn reset-lights! [lights-channel m n]
   (async/pipe
     (http/post "http://localhost:3000/reset-lights"
                {:with-credentials? false
                 :form-params {:m m :n n}})
-    result-channel
+    lights-channel
     false))
 
 (defn all-lights-off? [lights]
