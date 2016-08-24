@@ -20,7 +20,7 @@
        .-lights
        js->clj))
 
-(defn listen-lights-updates! [lights-channel]
+(defn listen-to-lights-updates! [lights-channel]
   (go-loop []
     (when-let [response (async/<! lights-channel)]
       (reset! lights (extract-lights response))

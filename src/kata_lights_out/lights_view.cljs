@@ -38,7 +38,7 @@
      [all-lights-off-message-component @lights]]))
 
 (defn mount [lights-channel m n]
-  (l/listen-lights-updates! lights-channel)
+  (l/listen-to-lights-updates! lights-channel)
 
   (l/reset-lights! lights-channel m n)
 
