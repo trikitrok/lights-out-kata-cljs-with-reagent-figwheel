@@ -1,9 +1,9 @@
 (ns kata-lights-out.core
   (:require
     [kata-lights-out.lights-view :as light-view]
-    [cljs.core.async :as async]
     [com.stuartsierra.component :as component]
-    [kata-lights-out.lights :as lights]))
+    [kata-lights-out.lights :as lights]
+    [kata-lights-out.lights-gateway :as lights-gateway]))
 
 (enable-console-print!)
 
@@ -27,10 +27,14 @@
 (defn init! [m n]
   (component/start
     (component/system-map
-      :lights-component (lights/make-api-gateway
-                          {:reset-lights-url "http://localhost:3000/reset-lights"
-                           :flip-light-url "http://localhost:3000/flip-light"}
-                          (async/chan))
+      :lights-gateway (lights-gateway/make-api-gateway
+                        {:reset-lights-url "http://localhost:3000/reset-lights"
+                         :flip-light-url "http://localhost:3000/flip-light"})
+
+      :lights-component (component/using
+                          (lights/make-lights)
+                          [:lights-gateway])
+
       :main (component/using
               (main-component m n)
               [:lights-component]))))

@@ -1,9 +1,9 @@
 (ns kata-lights-out.lights
   (:require
     [reagent.core :as r]
-    [cljs-http.client :as http]
     [cljs.core.async :as async]
-    [com.stuartsierra.component :as component])
+    [com.stuartsierra.component :as component]
+    [kata-lights-out.lights-gateway :as lights-gateway])
   (:require-macros
     [cljs.core.async.macros :refer [go go-loop]]))
 
@@ -12,59 +12,44 @@
 (defn light-off? [light]
   (= light light-off))
 
-(defn- extract-lights [response]
-  (->> response
-       :body
-       (.parse js/JSON)
-       .-lights
-       js->clj))
-
-(defn listen-to-lights-updates! [{:keys [lights-channel lights]}]
+(defn- listen-to-lights-updates! [{:keys [lights-channel lights]}]
   (go-loop []
-    (when-let [response (async/<! lights-channel)]
-      (reset! lights (extract-lights response))
+    (when-let [new-lights (async/<! lights-channel)]
+      (reset! lights new-lights)
       (recur))))
 
-(defn- post [lights-channel uri params]
-  (async/pipe
-    (http/post uri
-               {:with-credentials? false
-                :form-params params})
-    lights-channel
-    false))
-
-(defprotocol LightsGateway
+(defprotocol LightsOperations
   (reset-lights! [this m n])
   (flip-light! [this pos]))
 
-(defrecord ApiLightsGateway [config lights-channel]
+(defrecord Lights [lights-gateway]
   component/Lifecycle
   (start [this]
     (println ";; Starting lights component")
-    (let [this (merge this {:lights-channel lights-channel
-                            :lights (r/atom [])})]
+    (let [this (assoc this
+                      :lights-channel (async/chan)
+                      :lights (r/atom []))
+          lights-channel (:lights-channel this)
+          lights-gateway (assoc lights-gateway
+                                :lights-channel lights-channel)
+          this (assoc this :lights-gateway lights-gateway)]
       (listen-to-lights-updates! this)
       this))
 
   (stop [this]
     (println ";; Stopping lights component")
+    (async/close! (:lights-channel this))
     this)
 
-  LightsGateway
+  LightsOperations
   (reset-lights! [this m n]
-    (post (:lights-channel this)
-          (:reset-lights-url config)
-          {:m m :n n}))
+    (lights-gateway/reset-lights! (:lights-gateway this) m n))
 
-  (flip-light! [this [x y]]
-    (post (:lights-channel this)
-          (:flip-light-url config)
-          {:x x :y y})))
+  (flip-light! [this pos]
+    (lights-gateway/flip-light! (:lights-gateway this) pos)))
 
 (defn all-lights-off? [lights]
   (every? light-off? (flatten lights)))
 
-(defn make-api-gateway [config channel]
-  (map->ApiLightsGateway
-    {:config config
-     :lights-channel channel}))
+(defn make-lights []
+  (map->Lights {}))
