@@ -25,11 +25,19 @@
       (reset! lights (extract-lights response))
       (recur))))
 
-(defprotocol LightsOperations
+(defn- post [lights-channel uri params]
+  (async/pipe
+    (http/post uri
+               {:with-credentials? false
+                :form-params params})
+    lights-channel
+    false))
+
+(defprotocol LightsGateway
   (reset-lights! [this m n])
   (flip-light! [this pos]))
 
-(defrecord Lights [lights-channel]
+(defrecord ApiLightsGateway [config lights-channel]
   component/Lifecycle
   (start [this]
     (println ";; Starting lights component")
@@ -42,22 +50,21 @@
     (println ";; Stopping lights component")
     this)
 
-  LightsOperations
+  LightsGateway
   (reset-lights! [this m n]
-    (async/pipe
-      (http/post "http://localhost:3000/reset-lights"
-                 {:with-credentials? false
-                  :form-params {:m m :n n}})
-      (:lights-channel this)
-      false))
+    (post (:lights-channel this)
+          (:reset-lights-url config)
+          {:m m :n n}))
 
   (flip-light! [this [x y]]
-    (async/pipe
-      (http/post "http://localhost:3000/flip-light"
-                 {:with-credentials? false
-                  :form-params {:x x :y y}})
-      (:lights-channel this)
-      false)))
+    (post (:lights-channel this)
+          (:flip-light-url config)
+          {:x x :y y})))
 
 (defn all-lights-off? [lights]
   (every? light-off? (flatten lights)))
+
+(defn make-api-gateway [config channel]
+  (map->ApiLightsGateway
+    {:config config
+     :lights-channel channel}))

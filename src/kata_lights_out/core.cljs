@@ -27,7 +27,10 @@
 (defn init! [m n]
   (component/start
     (component/system-map
-      :lights-component (lights/map->Lights {:lights-channel (async/chan)})
+      :lights-component (lights/make-api-gateway
+                          {:reset-lights-url "http://localhost:3000/reset-lights"
+                           :flip-light-url "http://localhost:3000/flip-light"}
+                          (async/chan))
       :main (component/using
               (main-component m n)
               [:lights-component]))))
