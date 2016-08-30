@@ -14,7 +14,7 @@
   (start [this]
     (println ";; Starting main component")
     (lights/reset-lights! lights-component m n)
-    (light-view/mount lights-component m n)
+    (light-view/mount lights-component)
     this)
 
   (stop [this]
@@ -26,10 +26,10 @@
 
 (defn init! [m n]
   (component/start
-  (component/system-map
-    :lights-component (lights/map->Lights {:lights-channel (async/chan)})
-    :main (component/using
-            (main-component m n)
-            [:lights-component]))))
+    (component/system-map
+      :lights-component (lights/map->Lights {:lights-channel (async/chan)})
+      :main (component/using
+              (main-component m n)
+              [:lights-component]))))
 
 (init! 3 3)

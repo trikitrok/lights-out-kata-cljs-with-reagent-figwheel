@@ -37,9 +37,7 @@
      (map-indexed (partial row-lights-component lights-component) @(:lights lights-component))
      [all-lights-off-message-component @(:lights lights-component)]]))
 
-(defn mount [lights-component m n]
-  (lights/reset-lights! lights-component m n)
-
+(defn mount [lights-component]
   (r/render
     [home-page lights-component]
     (.getElementById js/document "app")))
