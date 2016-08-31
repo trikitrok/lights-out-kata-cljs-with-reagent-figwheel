@@ -1,22 +1,18 @@
 (ns kata-lights-out.lights
   (:require
     [reagent.core :as r]
-    [cljs.core.async :as async]
     [com.stuartsierra.component :as component]
-    [kata-lights-out.lights-gateway :as lights-gateway])
-  (:require-macros
-    [cljs.core.async.macros :refer [go-loop]]))
+    [kata-lights-out.lights-gateway :as lights-gateway]
+    [reagi.core :as reagi]))
 
 (def ^:private light-off 0)
 
 (defn light-off? [light]
   (= light light-off))
 
-(defn- listen-to-lights-updates! [{:keys [lights-channel lights]}]
-  (go-loop []
-    (when-let [new-lights (async/<! lights-channel)]
-      (reset! lights new-lights)
-      (recur))))
+(defn- listen-to-lights-updates! [{:keys [lights-stream lights]}]
+  (->> lights-stream
+       (reagi/map #(reset! lights %))))
 
 (defprotocol LightsOperations
   (reset-lights! [this m n])
@@ -27,18 +23,14 @@
   (start [this]
     (println ";; Starting lights component")
     (let [this (assoc this
-                      :lights-channel (async/chan)
+                      :lights-stream (:lights-stream lights-gateway)
                       :lights (r/atom []))
-          lights-channel (:lights-channel this)
-          lights-gateway (assoc lights-gateway
-                                :lights-channel lights-channel)
           this (assoc this :lights-gateway lights-gateway)]
       (listen-to-lights-updates! this)
       this))
 
   (stop [this]
     (println ";; Stopping lights component")
-    (async/close! (:lights-channel this))
     this)
 
   LightsOperations

@@ -1,8 +1,11 @@
 (ns kata-lights-out.lights-gateway
   (:require
     [cljs-http.client :as http]
-    [cljs.core.async :as async]
-    [com.stuartsierra.component :as component]))
+    [com.stuartsierra.component :as component]
+    [reagi.core :as reagi]
+    [cljs.core.async :as async])
+  (:require-macros
+    [cljs.core.async.macros :refer [go]]))
 
 (defn- extract-lights [response]
   (->> response
@@ -11,13 +14,12 @@
        .-lights
        js->clj))
 
-(defn- post [lights-channel uri params]
-  (async/pipeline
-    1
-    lights-channel
-    (map extract-lights)
-    (http/post uri {:with-credentials? false :form-params params})
-    false))
+(defn- post [lights-stream uri params]
+  (go
+    (when-let [response (async/<! (http/post uri {:with-credentials? false
+                                                  :form-params params}))]
+      (reagi/deliver lights-stream
+                     (extract-lights response)))))
 
 (defprotocol LightsGateway
   (reset-lights! [this m n])
@@ -27,20 +29,21 @@
   component/Lifecycle
   (start [this]
     (println ";; Starting ApiLightsGateway component")
-    this)
+    (assoc this :lights-stream (reagi/events)))
 
   (stop [this]
     (println ";; Stopping ApiLightsGateway component")
+    (reagi/dispose (:lights-stream this))
     this)
 
   LightsGateway
   (reset-lights! [this m n]
-    (post (:lights-channel this)
+    (post (:lights-stream this)
           (:reset-lights-url config)
           {:m m :n n}))
 
   (flip-light! [this [x y]]
-    (post (:lights-channel this)
+    (post (:lights-stream this)
           (:flip-light-url config)
           {:x x :y y})))
 
