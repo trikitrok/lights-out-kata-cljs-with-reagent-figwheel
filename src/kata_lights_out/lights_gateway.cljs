@@ -14,14 +14,12 @@
        js->clj))
 
 (defn- post [lights-channel uri params]
-  (async/pipe
-    (async/pipe
-      (http/post uri
-                 {:with-credentials? false
-                  :form-params params})
-      (async/chan 1 (map extract-lights))
-      false)
-    lights-channel))
+  (async/pipeline
+    1
+    lights-channel
+    (map extract-lights)
+    (http/post uri {:with-credentials? false :form-params params})
+    false))
 
 (defprotocol LightsGateway
   (reset-lights! [this m n])
@@ -47,7 +45,6 @@
     (post (:lights-channel this)
           (:flip-light-url config)
           {:x x :y y})))
-
 
 (defn make-api-gateway [config]
   (->ApiLightsGateway config))
