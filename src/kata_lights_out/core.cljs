@@ -1,6 +1,6 @@
 (ns kata-lights-out.core
   (:require
-    [kata-lights-out.lights-view :as light-view]
+    [kata-lights-out.lights-view :as lights-view]
     [com.stuartsierra.component :as component]
     [kata-lights-out.lights :as lights]
     [kata-lights-out.lights-gateway :as lights-gateway]))
@@ -14,7 +14,7 @@
   (start [this]
     (println ";; Starting main component")
     (lights/reset-lights! lights-component m n)
-    (light-view/mount lights-component)
+    (lights-view/mount lights-component)
     this)
 
   (stop [this]
