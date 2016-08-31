@@ -14,8 +14,9 @@
                         {:reset-lights-url "http://localhost:3000/reset-lights"
                          :flip-light-url "http://localhost:3000/flip-light"})
 
-      :lights-component (component/using (lights/make-lights m n)
-                                         [:lights-gateway])
+      :lights-component (component/using
+                          (lights/make-lights m n)
+                          [:lights-gateway])
 
       :lights-view (component/using
                      (lights-view/make {:success-message "Lights out, Yay!"
