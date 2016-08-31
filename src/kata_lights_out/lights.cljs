@@ -15,10 +15,10 @@
        (reagi/map #(reset! lights %))))
 
 (defprotocol LightsOperations
-  (reset-lights! [this m n])
+  (reset-lights! [this])
   (flip-light! [this pos]))
 
-(defrecord Lights [lights-gateway]
+(defrecord Lights [lights-gateway m n]
   component/Lifecycle
   (start [this]
     (println ";; Starting lights component")
@@ -26,7 +26,10 @@
                       :lights-stream (:lights-stream lights-gateway)
                       :lights (r/atom []))
           this (assoc this :lights-gateway lights-gateway)]
+
       (listen-to-lights-updates! this)
+
+      (reset-lights! this)
       this))
 
   (stop [this]
@@ -34,7 +37,7 @@
     this)
 
   LightsOperations
-  (reset-lights! [this m n]
+  (reset-lights! [this]
     (lights-gateway/reset-lights! (:lights-gateway this) m n))
 
   (flip-light! [this pos]
@@ -43,5 +46,5 @@
 (defn all-lights-off? [lights]
   (every? light-off? (flatten lights)))
 
-(defn make-lights []
-  (map->Lights {}))
+(defn make-lights [m n]
+  (map->Lights {:m m :n n}))

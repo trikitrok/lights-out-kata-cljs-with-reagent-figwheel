@@ -13,16 +13,13 @@
   component/Lifecycle
   (start [this]
     (println ";; Starting main component")
-    (lights/reset-lights! lights-component m n)
+    (lights/reset-lights! lights-component)
     (lights-view/mount lights-component)
     this)
 
   (stop [this]
     (println ";; Stopping lights component")
     this))
-
-(defn main-component [m n]
-  (map->MainComponent {:n n :m m}))
 
 (defn init! [m n]
   (component/start
@@ -31,12 +28,14 @@
                         {:reset-lights-url "http://localhost:3000/reset-lights"
                          :flip-light-url "http://localhost:3000/flip-light"})
 
-      :lights-component (component/using
-                          (lights/make-lights)
-                          [:lights-gateway])
+      :lights-component (component/using (lights/make-lights m n)
+                                         [:lights-gateway])
 
-      :main (component/using
-              (main-component m n)
-              [:lights-component]))))
+      :lights-view (component/using
+                     (lights-view/make {:success-message "Lights out, Yay!"
+                                        :light-on "X"
+                                        :light-off "0"
+                                        :title "Kata Lights Out"})
+                     [:lights-component]))))
 
 (init! 3 3)
