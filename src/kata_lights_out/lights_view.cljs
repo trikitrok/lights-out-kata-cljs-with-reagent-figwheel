@@ -5,9 +5,6 @@
     [reagi.core :as reagi]
     [com.stuartsierra.component :as component]))
 
-;(def ^:private light-on "1")
-;(def ^:private light-off "0")
-
 (defn- all-lights-off-message-content [config lights]
   (if (lights/all-lights-off? lights)
     (:success-message config)
