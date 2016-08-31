@@ -1,7 +1,8 @@
 (ns kata-lights-out.lights-view
   (:require
     [reagent.core :as r]
-    [kata-lights-out.lights :as lights]))
+    [kata-lights-out.lights :as lights]
+    [reagi.core :as reagi]))
 
 (def ^:private light-on "1")
 (def ^:private light-off "0")
@@ -15,30 +16,38 @@
   [:div#all-off-msg
    (all-lights-off-message-content lights)])
 
-(defn- on-light-click [lights-component pos]
-  (lights/flip-light! lights-component pos))
-
 (defn- render-light [light]
   (if (lights/light-off? light)
     light-off
     light-on))
 
-(defn- light-component [lights-component i j light]
+(defn- light-component [clicked-light-positions i j light]
   ^{:key (+ i j)}
   [:button
-   {:on-click #(on-light-click lights-component [i j])} (render-light light)])
+   {:on-click #(reagi/deliver clicked-light-positions [i j])}
+   (render-light light)])
 
-(defn- row-lights-component [lights-component i row-lights]
+(defn- row-lights-component [clicked-light-positions i row-lights]
   ^{:key i}
-  [:div (map-indexed (partial light-component lights-component i) row-lights)])
+  [:div (map-indexed (partial light-component clicked-light-positions i) row-lights)])
 
-(defn- home-page [lights-component]
+(defn- home-page [clicked-light-positions lights-component]
   (fn []
-    [:div [:h2 "Kata Lights Out"]
-     (map-indexed (partial row-lights-component lights-component) @(:lights lights-component))
-     [all-lights-off-message-component @(:lights lights-component)]]))
+    (let [lights (:lights lights-component)]
+      [:div [:h2 "Kata Lights Out"]
+       (map-indexed (partial row-lights-component clicked-light-positions) @lights)
+       [all-lights-off-message-component @lights]])))
+
+(defn- flip-light-when-clicked [lights-component clicked-light-positions]
+  (->> clicked-light-positions
+       (reagi/map #(lights/flip-light! lights-component %))))
 
 (defn mount [lights-component]
-  (r/render
-    [home-page lights-component]
-    (.getElementById js/document "app")))
+  (let [clicked-light-positions (reagi/events)]
+
+    (flip-light-when-clicked
+      lights-component clicked-light-positions)
+
+    (r/render
+      [home-page clicked-light-positions lights-component]
+      (.getElementById js/document "app"))))
