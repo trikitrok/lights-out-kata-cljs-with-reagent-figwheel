@@ -2,11 +2,9 @@
   (:require
     [cljs-http.client :as http]
     [cljs.core.async :as async]
-    [com.stuartsierra.component :as component])
-  (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
+    [com.stuartsierra.component :as component]))
 
-(defn extract-lights [response]
+(defn- extract-lights [response]
   (->> response
        :body
        (.parse js/JSON)

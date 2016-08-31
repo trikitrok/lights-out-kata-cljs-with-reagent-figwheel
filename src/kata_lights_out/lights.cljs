@@ -5,7 +5,7 @@
     [com.stuartsierra.component :as component]
     [kata-lights-out.lights-gateway :as lights-gateway])
   (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]))
+    [cljs.core.async.macros :refer [go-loop]]))
 
 (def ^:private light-off 0)
 
