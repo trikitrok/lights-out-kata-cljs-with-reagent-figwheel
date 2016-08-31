@@ -7,20 +7,6 @@
 
 (enable-console-print!)
 
-;; -------------------------
-;; Initialize app
-(defrecord MainComponent [lights-component m n]
-  component/Lifecycle
-  (start [this]
-    (println ";; Starting main component")
-    (lights/reset-lights! lights-component)
-    (lights-view/mount lights-component)
-    this)
-
-  (stop [this]
-    (println ";; Stopping lights component")
-    this))
-
 (defn init! [m n]
   (component/start
     (component/system-map
@@ -33,7 +19,7 @@
 
       :lights-view (component/using
                      (lights-view/make {:success-message "Lights out, Yay!"
-                                        :light-on "X"
+                                        :light-on "1"
                                         :light-off "0"
                                         :title "Kata Lights Out"})
                      [:lights-component]))))
