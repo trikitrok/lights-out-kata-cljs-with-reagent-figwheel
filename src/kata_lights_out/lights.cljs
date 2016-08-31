@@ -1,49 +1,55 @@
-(ns kata-lights-out.lights)
+(ns kata-lights-out.lights
+  (:require
+    [reagent.core :as r]
+    [cljs.core.async :as async]
+    [com.stuartsierra.component :as component]
+    [kata-lights-out.lights-gateway :as lights-gateway])
+  (:require-macros
+    [cljs.core.async.macros :refer [go-loop]]))
 
-(def ^:private light-on 1)
 (def ^:private light-off 0)
-
-(defn- neighbors? [[i0 j0] [i j]]
-  (or (and (= j0 j) (= 1 (Math/abs (- i0 i))))
-      (and (= i0 i) (= 1 (Math/abs (- j0 j))))))
-
-(defn- neighbors [m n pos]
-  (for [i (range m)
-        j (range n)
-        :when (neighbors? pos [i j])]
-    [i j]))
 
 (defn light-off? [light]
   (= light light-off))
 
-(defn- flip-light [light]
-  (if (light-off? light)
-    light-on
-    light-off))
+(defn- listen-to-lights-updates! [{:keys [lights-channel lights]}]
+  (go-loop []
+    (when-let [new-lights (async/<! lights-channel)]
+      (reset! lights new-lights)
+      (recur))))
 
-(defn- flip [lights pos]
-  (update-in lights pos flip-light))
+(defprotocol LightsOperations
+  (reset-lights! [this m n])
+  (flip-light! [this pos]))
 
-(defn- num-rows [lights]
-  (count lights))
+(defrecord Lights [lights-gateway]
+  component/Lifecycle
+  (start [this]
+    (println ";; Starting lights component")
+    (let [this (assoc this
+                      :lights-channel (async/chan)
+                      :lights (r/atom []))
+          lights-channel (:lights-channel this)
+          lights-gateway (assoc lights-gateway
+                                :lights-channel lights-channel)
+          this (assoc this :lights-gateway lights-gateway)]
+      (listen-to-lights-updates! this)
+      this))
 
-(defn- num-colums [lights]
-  (count (first lights)))
+  (stop [this]
+    (println ";; Stopping lights component")
+    (async/close! (:lights-channel this))
+    this)
 
-(defn- flip-neighbors [pos lights]
-  (->> pos
-       (neighbors (num-rows lights) (num-colums lights))
-       (cons pos)
-       (reduce flip lights)))
+  LightsOperations
+  (reset-lights! [this m n]
+    (lights-gateway/reset-lights! (:lights-gateway this) m n))
 
-(defn- all-lights-on [m n]
-  (vec (repeat m (vec (repeat n light-on)))))
-
-(defn reset-lights! [lights m n]
-  (reset! lights (all-lights-on m n)))
-
-(defn flip-lights! [lights pos]
-  (swap! lights (partial flip-neighbors pos)))
+  (flip-light! [this pos]
+    (lights-gateway/flip-light! (:lights-gateway this) pos)))
 
 (defn all-lights-off? [lights]
-  (every? zero? (flatten lights)))
+  (every? light-off? (flatten lights)))
+
+(defn make-lights []
+  (map->Lights {}))

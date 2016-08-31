@@ -10,7 +10,9 @@
                  [org.clojure/clojurescript "1.9.89"]
                  [org.clojure/core.async "0.2.385" :exclusions [org.clojure/tools.reader]]
                  [reagent "0.6.0-rc"]
-                 [hiccup "1.0.5"]]
+                 [hiccup "1.0.5"]
+                 [cljs-http "0.1.41"]
+                 [com.stuartsierra/component "0.3.1"]]
 
   :plugins [[lein-figwheel "0.5.4-7"]
             [lein-cljsbuild "1.1.3" :exclusions [[org.clojure/clojure]]]]
